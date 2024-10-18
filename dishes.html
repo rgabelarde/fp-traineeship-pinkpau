@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Finder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script src="components/header.js" type="text/javascript" defer></script>
+    <script src="components/searchBar.js" type="text/javascript" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>    
+    <header-component></header-component>
+    <search-bar></search-bar>
+    <div class="ingredientfilter">
+        <span><b>Filter by ingredient:&nbsp;&nbsp;&nbsp;</b></span>
+        <label for="rice">Rice</label>
+        <input type="checkbox" id="rice" value="Rice" name="rice">
+    </div>
+    <p id="message"></p>
+
+    <!-- Display search results here -->
+    <div id="results"></div>
+    <div class="container">
+        <div class="meals-container" id="meals"></div> <!-- Ensure meals div is here -->
+    </div>
+
+        <!--This script links search query result to this page-->
+        <script>
+            function getQueryParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            }
+
+            function displayResults() {
+                const query = getQueryParameter('query');
+                const resultsDiv = document.getElementById('results');
+                console.log('Query:', query); // Log the query for debugging
+
+                if (query) {
+                    resultsDiv.innerHTML = `<p>You searched for: <strong>${query}</strong></p>`;
+                    // Ensure that the input field with id "searchQuery" exists
+                    const searchQueryInput = document.getElementById('searchQuery');
+                    if (searchQueryInput) {
+                        searchQueryInput.value = query; // Populate the search bar with the query
+                    } else {
+                        console.error('Element with id "searchQuery" not found.');
+                    }
+                } else {
+                    resultsDiv.innerHTML = '<p>No search query provided.</p>';
+                }
+            }
+
+            async function searchMeals(isChecked) {
+                if(isChecked){
+                    const query = document.getElementById('rice').value || ' '; // Default to ' '
+                    const url = `https://www.themealdb.com/api/json/v1/1/filter.php?i=${query}`;
+
+                    try {
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        displayMeals(data.meals, isChecked);
+                    } catch (error) {
+                        console.error('Error fetching the meal data:', error);
+                    }
+                } else {
+                    const query = document.getElementById('searchQuery').value || ' '; // Default to ' '
+                    const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+
+                    try {
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        displayMeals(data.meals,isChecked);
+                    } catch (error) {
+                        console.error('Error fetching the meal data:', error);
+                    }
+                }
+            }
+
+            function displayMeals(meals,isChecked) {
+                const mealsDiv = document.getElementById('meals');
+                mealsDiv.innerHTML = ''; // Clear previous results
+                if(isChecked){
+                    if(meals){
+                        console.log(meals);
+                        meals.forEach(meal => {
+                            const mealDiv = document.createElement('div');
+                            mealDiv.className = 'meal';
+                            mealDiv.innerHTML = `
+                            <img class="meal-img" src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                            <div class="meal-content">
+                                <h2>${meal.strMeal}</h2>
+                                <form action="specificdish.html" method="get">
+                                    <input type="text" name="meal_id" value="${meal.idMeal}" hidden>
+                                    <button class="select-btn" type="submit">Start cooking!</button>
+                                </form>
+                            </div>
+                        `;
+                        mealsDiv.appendChild(mealDiv);
+                        });
+                    }
+                } else {
+                    if (meals) {
+                        meals.forEach(meal => {
+                            const mealDiv = document.createElement('div');
+                            mealDiv.className = 'meal';
+                            mealDiv.innerHTML = `
+                                <img class="meal-img" src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                                <div class="meal-content">
+                                    <h2>${meal.strMeal}</h2>
+                                    <p>${meal.strInstructions.slice(0, 90)}...</p>
+                                    <form action="specificdish.html" method="get">
+                                        <input type="text" name="meal_id" value="${meal.idMeal}" hidden>
+                                        <button class="select-btn" type="submit">Start cooking!</button>
+                                    </form>
+                                </div>
+                            `;
+                            mealsDiv.appendChild(mealDiv);
+                        });
+                    } else {
+                        mealsDiv.innerHTML = '<p>No meals found.</p>';
+                    }
+                }
+            }
+            const checkbox = document.getElementById('rice');
+            const message = document.getElementById('message');
+
+            // Run this when the DOM is fully loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                const query = getQueryParameter('query');
+                if (query) {
+                    displayResults(); // Display search results if there is a query
+                }
+                isChecked = false;
+                searchMeals(isChecked); // Fetch default meal on page load
+            });
+
+            // Add an event listener for change events
+            checkbox.addEventListener('change', function() {
+                if (checkbox.checked) {
+                    // Action to perform if checkbox is checked
+                    isChecked = true;
+                    searchMeals(isChecked);
+                } else {
+                    // Action to perform if checkbox is unchecked
+                    isChecked = false;
+                    searchMeals(isChecked);
+                }
+            });
+        </script>
+</body>
+</html>
